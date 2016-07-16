@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nizcita", "Nizcita\Nizcita.csproj", "{A97D9D81-9F64-48D1-A872-381B6FE20085}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBed", "TestBed\TestBed.csproj", "{6EB09CB5-9AE8-4FD5-955E-904AE964993C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NizcitaTests", "NizcitaTests\NizcitaTests.csproj", "{4AC94319-2DD2-4AFB-AE7E-A4357A8F46D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{A97D9D81-9F64-48D1-A872-381B6FE20085}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A97D9D81-9F64-48D1-A872-381B6FE20085}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A97D9D81-9F64-48D1-A872-381B6FE20085}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EB09CB5-9AE8-4FD5-955E-904AE964993C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EB09CB5-9AE8-4FD5-955E-904AE964993C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EB09CB5-9AE8-4FD5-955E-904AE964993C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EB09CB5-9AE8-4FD5-955E-904AE964993C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AC94319-2DD2-4AFB-AE7E-A4357A8F46D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AC94319-2DD2-4AFB-AE7E-A4357A8F46D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AC94319-2DD2-4AFB-AE7E-A4357A8F46D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AC94319-2DD2-4AFB-AE7E-A4357A8F46D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

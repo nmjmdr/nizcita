@@ -1,0 +1,8 @@
+c:\Nizcita\NizcitaTests\bin\Debug\NizcitaTests.dll
+c:\Nizcita\NizcitaTests\bin\Debug\NizcitaTests.pdb
+c:\Nizcita\NizcitaTests\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+c:\Nizcita\NizcitaTests\bin\Debug\Nizcita.dll
+c:\Nizcita\NizcitaTests\bin\Debug\Nizcita.pdb
+c:\Nizcita\NizcitaTests\obj\Debug\NizcitaTests.csprojResolveAssemblyReference.cache
+c:\Nizcita\NizcitaTests\obj\Debug\NizcitaTests.dll
+c:\Nizcita\NizcitaTests\obj\Debug\NizcitaTests.pdb
