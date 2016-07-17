@@ -4,95 +4,93 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nizcita.Tests {
     [TestClass()]
     public class CircuitBreakerTests {
-        
-        [TestMethod]
-        public void InvokedTest() {
-            CircuitBreaker<int> cb = new CircuitBreaker<int>();
 
+        [TestMethod]
+        public void InvokeTest() {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => { return 20; });
             int expected = 10;
+
             int x = cb.Invoke(() => {
                 return expected;
             }).Result;
 
-            Assert.AreEqual<int>(x, expected);
+            Assert.AreEqual<int>(expected, x);
         }
 
-        [TestMethod]
-        public void InvokedConditionalReturnTest() {
 
-            int original = 10;
-            int conditionallyReturned = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().OnResult((r) => {
-                return r == original;
-            }).Return(() => {
-                return conditionallyReturned;
+        [TestMethod]
+        public void OnExceptionAlternativeTest() {
+            int alternate = 20;
+            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+                return alternate;
             });
-
-            
-            int x = cb.Invoke(() => {
-                return original;
-            }).Result;
-
-            Assert.AreEqual<int>(x, conditionallyReturned);
-        }
-
-        [TestMethod]
-        public void OnExceptionHandledTest() {
-                        
-            int conditionallyReturned = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>();
 
             int x = cb.Invoke(() => {
                 throw new DivideByZeroException();
             }).Result;
 
-            Assert.AreEqual<int>(x, conditionallyReturned);
+            Assert.AreEqual<int>(alternate, x);
         }
 
-
         [TestMethod]
-        public void InvokedConditionalReturnChainTest() {
+        public void OnExceptionHandlerCallTest() {
+            int alternate = 20;
 
-            int original = 10;
-            int conditionallyReturned = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().OnResult((r) => {
-                return r == 5;
-            }).Return(() => {
-                return 100;
-            }).OnResult((r) => {
-                return r == original;
-            }).Return(() => {
-                return conditionallyReturned;
+            bool handledException = false;
+
+            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+                return alternate;
+            }).OnExceptions((ie) => {
+                foreach (Exception exp in ie) {
+                    if (exp is DivideByZeroException) {
+                        handledException = true;
+                        break;
+                    }
+                }
             });
 
-
             int x = cb.Invoke(() => {
-                return original;
+                throw new DivideByZeroException();
             }).Result;
 
-            Assert.AreEqual<int>(x, conditionallyReturned);
+            Assert.IsTrue(handledException);
         }
 
         [TestMethod]
-        public void AlternativeOnTimeoutTest() {
-            int original = 10;
-            int alternate = 100;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().WithinTime(new TimeSpan(0, 0, 0, 0, 0)).Alternate(() => {
+        public void OnCloseAlternateTest() {
+            int alternate = 20;
+            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
                 return alternate;
             });
 
+            cb.Close();
 
             int x = cb.Invoke(() => {
-                System.Threading.Thread.Sleep(new TimeSpan(0, 0, 0, 2));
-                return original;
+                return 10;
             }).Result;
 
-            Assert.AreEqual<int>(x, alternate);
+            Assert.AreEqual<int>(alternate, x);
+        }
+
+        [TestMethod]
+        public void OnTimeoutAlternateTest() {
+            int alternate = 20;
+            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+                return alternate;
+            }).WithinTime(new TimeSpan(0, 0, 0, 0));
+                        
+            int x = cb.Invoke(() => {
+                Thread.Sleep(new TimeSpan(0, 0, 0, 2));
+                return 10;
+            }).Result;
+
+            Assert.AreEqual<int>(alternate, x);
         }
     }
 }
