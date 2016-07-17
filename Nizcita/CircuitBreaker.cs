@@ -8,19 +8,21 @@ using System.Threading.Tasks;
 
 namespace Nizcita
 {
-    public class CircuitBreaker<R>
-    {      
-        
+    public class CircuitBreaker<R> {
+
         private CancellationToken timeCancelToken;
         private CancellationToken calleeCancelToken;
         private CancellationTokenSource combinedCancelTokenSource = new CancellationTokenSource();
         private Func<R> alternativeFn;
         private bool isOpen = true;
         private Action<IEnumerable<Exception>> exceptionsHandler;
-       
-        public async Task<R> Invoke(Func<R> f) {
 
-           
+        public CircuitBreaker(int bufferSize) {
+        }
+
+
+        public async Task<R> Invoke(Func<R> f) {
+                      
 
             if(isOpen) {
                 return await Task.Run(() => {

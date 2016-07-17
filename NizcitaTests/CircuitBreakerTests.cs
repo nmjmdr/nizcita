@@ -13,7 +13,7 @@ namespace Nizcita.Tests {
 
         [TestMethod]
         public void InvokeTest() {
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => { return 20; });
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => { return 20; });
             int expected = 10;
 
             int x = cb.Invoke(() => {
@@ -27,7 +27,7 @@ namespace Nizcita.Tests {
         [TestMethod]
         public void OnExceptionAlternativeTest() {
             int alternate = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => {
                 return alternate;
             });
 
@@ -44,7 +44,7 @@ namespace Nizcita.Tests {
 
             bool handledException = false;
 
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => {
                 return alternate;
             }).OnExceptions((ie) => {
                 foreach (Exception exp in ie) {
@@ -65,7 +65,7 @@ namespace Nizcita.Tests {
         [TestMethod]
         public void OnCloseAlternateTest() {
             int alternate = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => {
                 return alternate;
             });
 
@@ -81,7 +81,7 @@ namespace Nizcita.Tests {
         [TestMethod]
         public void OnTimeoutAlternateTest() {
             int alternate = 20;
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => {
                 return alternate;
             }).WithinTime(new TimeSpan(0, 0, 0, 0));
                         

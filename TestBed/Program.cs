@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace TestBed {
     class Program {
         static void Main(string[] args) {
-            CircuitBreaker<int> cb = new CircuitBreaker<int>().Alternate(() => {
+            CircuitBreaker<int> cb = new CircuitBreaker<int>(1).Alternate(() => {
                 Thread.Sleep(2000);
                 return -1;
             });
