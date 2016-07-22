@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nizcita {
-    public class CircularBuffer<T> {
+    public class CircularBuffer<T> : ICircularBuffer<T> {
         private T[] buffer;
         private int last = 0;
         private int sz;
-        private int count = 0;
+       
 
         public CircularBuffer(int sz) {
             // array index starts at 1
@@ -17,24 +17,33 @@ namespace Nizcita {
             buffer = new T[sz+1];
         }
 
-        public IEnumerable<T> Read() {
+        /// <summary>
+        /// The values in the array could be null 
+        /// it is responsiblity of the callee to check for null when the array is iterated
+        /// </summary>
+        /// <returns></returns>
+        public T[] Read() {
+            T[] arr = new T[sz];            
 
             int iterator = 0;            
-            for(int read = 0;read < count; read++) {
+            for(int read = 0;read < sz; read++) {
                 int index = last - iterator;
-                index = index <= 0 ? (count + index) : index;                
-                yield return buffer[index];
+                index = index <= 0 ? (sz + index) : index;
+                if (buffer[index] != null) {
+                    arr[iterator] = buffer[index];
+                } else {
+                    break;
+                }
                 iterator++;
-            }           
+            }
+
+            return arr;           
         }
 
         public void Put(T item) {
             last++;
             last = last > sz ? 1 : last;
             buffer[last] = item;
-
-            count++;
-            count = count > sz ? sz : count;
         }
     }
 }
