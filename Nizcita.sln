@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 14 for Windows Desktop
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimitedBuffer", "LimitedBuffer\LimitedBuffer.csproj", "{A9EBB235-73FD-4CCC-8539-AE9D67F28086}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unittests", "UnitTests\Unittests.csproj", "{ED6404A9-4FE8-468E-91A3-8EF44A2F3F11}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A9EBB235-73FD-4CCC-8539-AE9D67F28086}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9EBB235-73FD-4CCC-8539-AE9D67F28086}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9EBB235-73FD-4CCC-8539-AE9D67F28086}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9EBB235-73FD-4CCC-8539-AE9D67F28086}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED6404A9-4FE8-468E-91A3-8EF44A2F3F11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED6404A9-4FE8-468E-91A3-8EF44A2F3F11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED6404A9-4FE8-468E-91A3-8EF44A2F3F11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED6404A9-4FE8-468E-91A3-8EF44A2F3F11}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
