@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nizcita", "Nizcita\Nizcita.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBed", "TestBed\TestBed.csproj", "{CE0E2E2C-BDB8-4AA5-9982-6AC6AF6F4247}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NizcitaTests", "NizcitaTests\NizcitaTests.csproj", "{20B2ED07-AA47-49C3-B42A-EB0A460BDBB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{CE0E2E2C-BDB8-4AA5-9982-6AC6AF6F4247}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE0E2E2C-BDB8-4AA5-9982-6AC6AF6F4247}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE0E2E2C-BDB8-4AA5-9982-6AC6AF6F4247}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20B2ED07-AA47-49C3-B42A-EB0A460BDBB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20B2ED07-AA47-49C3-B42A-EB0A460BDBB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20B2ED07-AA47-49C3-B42A-EB0A460BDBB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20B2ED07-AA47-49C3-B42A-EB0A460BDBB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
