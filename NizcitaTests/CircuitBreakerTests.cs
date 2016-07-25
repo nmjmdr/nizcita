@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Nizcita;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,16 @@ using System.Threading.Tasks;
 namespace Nizcita.Tests {
     [TestClass()]
     public class CircuitBreakerTests {
+
         
+
         [TestMethod]
         public void SimpleInvokeTest() {
-            CircuitBreaker<int> c = new CircuitBreaker<int>();
+
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object);
             int val = 10;
 
             int x = c.InvokeAysnc((token) => {
@@ -24,13 +31,16 @@ namespace Nizcita.Tests {
             Assert.AreEqual<int>(val, x);
         }
 
-
         [TestMethod]
         public void OnExceptionAlternateTest() {
             int val = 10;
             int alternate = 5;
 
-            CircuitBreaker<int> c = new CircuitBreaker<int>().Alternate((token) => {
+            Point point = null;
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>())).Callback<Point>((p) => { point = p; });
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
             });
@@ -44,6 +54,95 @@ namespace Nizcita.Tests {
             }).Result;
 
             Assert.AreEqual<int>(alternate, x);
+            Assert.IsNotNull(point);
+            Assert.IsTrue(point.Fault is DivideByZeroException);
+            Assert.IsTrue(point.Type == FailureType.Fault);
+        }
+
+        [TestMethod]
+        public void OnCloseAlternateTest() {
+            int val = 10;
+            int alternate = 5;
+
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => { return alternate; });
+            });
+
+            c.Close();
+
+            int x = c.InvokeAysnc((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => {                   
+                    return val;
+                });
+            }).Result;
+
+            Assert.AreEqual<int>(alternate, x);
+        }
+
+
+        [TestMethod]
+        public void OnInvalidResultAlternateTest() {
+            int val = 10;
+            int alternate = 5;
+
+            Point point = null;
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>())).Callback<Point>((p) => { point = p; });
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => { return alternate; });
+            }).ResultOk((r) => {
+                if (r == val) {
+                    return false;
+                }
+                return true;
+            });           
+
+            int x = c.InvokeAysnc((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => {
+                    return val;
+                });
+            }).Result;
+
+            Assert.AreEqual<int>(alternate, x);
+            Assert.IsNotNull(point);
+            Assert.IsTrue(point.Type == FailureType.InvalidResult);
+        }
+
+
+        [TestMethod]
+        public void OnValidResultInvokeTest() {
+            int val = 10;
+            int alternate = 5;
+
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => { return alternate; });
+            }).ResultOk((r) => {
+                if (r == val) {
+                    return true;
+                }
+                return false;
+            });
+
+            int x = c.InvokeAysnc((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => {
+                    return val;
+                });
+            }).Result;
+
+            Assert.AreEqual<int>(val, x);
         }
 
 
@@ -54,7 +153,10 @@ namespace Nizcita.Tests {
 
             Exception exp = null;
 
-            CircuitBreaker<int> c = new CircuitBreaker<int>().Alternate((token) => {
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
             }).InterceptException((e) => {
@@ -72,6 +174,7 @@ namespace Nizcita.Tests {
 
             Assert.AreEqual<int>(alternate, x);
             Assert.IsTrue(exp is DivideByZeroException);
+
         }
 
 
@@ -81,7 +184,11 @@ namespace Nizcita.Tests {
             int val = 10;
             int alternate = 5;
 
-            CircuitBreaker<int> c = new CircuitBreaker<int>().Alternate((token) => {
+            Point point = null;
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>())).Callback<Point>((p) => { point = p; });
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
             }).WithinTime(new TimeSpan(0, 0, 0, 0, 10));
@@ -101,6 +208,9 @@ namespace Nizcita.Tests {
             }).Result;
 
             Assert.AreEqual<int>(alternate, x);
+            Assert.IsNotNull(point);
+            Assert.IsTrue(point.Type == FailureType.TimedOut);
+            Assert.IsNotNull(point.TimeTaken);
         }
 
 
@@ -109,10 +219,13 @@ namespace Nizcita.Tests {
             int val = 10;
             int alternate = 5;
 
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
             CancellationTokenSource cts = new CancellationTokenSource();
             cts.CancelAfter(2);
 
-            CircuitBreaker<int> c = new CircuitBreaker<int>().Alternate((token) => {
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
             }).Cancellation(cts.Token);

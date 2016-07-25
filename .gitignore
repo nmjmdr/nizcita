@@ -4,4 +4,6 @@
 *.exe
 *.dll
 /TestResults
+/packages
+
 

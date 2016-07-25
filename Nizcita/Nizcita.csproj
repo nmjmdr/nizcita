@@ -40,8 +40,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Alarm.cs" />
     <Compile Include="CircuitBreaker.cs" />
+    <Compile Include="FailureType.cs" />
+    <Compile Include="IMonitor.cs" />
+    <Compile Include="Monitor.cs" />
+    <Compile Include="Point.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LimitedBuffer\LimitedBuffer.csproj">
+      <Project>{a9ebb235-73fd-4ccc-8539-ae9d67f28086}</Project>
+      <Name>LimitedBuffer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

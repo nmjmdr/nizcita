@@ -16,9 +16,17 @@ namespace Nizcita
         private Func<CancellationToken, Task<R>> alternateFn;
         private Action<Exception> exceptionIntercept;
         private volatile bool isOpen = true;
+        private Func<R, bool> isResultOk;
+        private IMonitor monitor;
 
-        public CircuitBreaker() {
-            this.combinedCancelTokenSource = new CancellationTokenSource();           
+        public CircuitBreaker(int bufferSz) {
+            this.combinedCancelTokenSource = new CancellationTokenSource();
+            this.monitor = new Monitor(new ConcurrentLimitedBuffer<Point>(bufferSz));         
+        }
+
+        public CircuitBreaker(IMonitor monitor) {
+            this.combinedCancelTokenSource = new CancellationTokenSource();
+            this.monitor = monitor;
         }
 
         public async Task<R> InvokeAysnc(Func<CancellationToken, Task<R>> f) {
@@ -51,12 +59,16 @@ namespace Nizcita
             R r = default(R);
 
             Stopwatch watch = new Stopwatch();
-
-
             try {
                 watch.Start();
                 r = await f(combinedCancelTokenSource.Token);
                 watch.Stop();
+
+                if (!isResultOk(r)) {
+                    computeAlternate = true;
+                    logInvalidResult(watch.Elapsed,r);
+                }
+
             } catch (OperationCanceledException) {
                 watch.Stop();
                 if (timeCancelToken.IsCancellationRequested) {
@@ -72,6 +84,8 @@ namespace Nizcita
                 computeAlternate = true;
             }
 
+
+
             if (computeAlternate && alternateFn != null) {
                 r = await alternateFn(cancelToken);
             }
@@ -79,12 +93,16 @@ namespace Nizcita
             return r;
         }
 
+        private void logInvalidResult(TimeSpan elapsed, R r) {
+            monitor.Log(new Point { Type = FailureType.InvalidResult, TimeTaken = elapsed });
+        }
+
         private void logFault(TimeSpan elapsed, Exception exp) {
-           // will implement later
+            monitor.Log(new Point { Fault = exp, Type = FailureType.Fault, TimeTaken=elapsed });
         }
 
         private void logTimedOut(TimeSpan elapsed) {
-            // will implement later
+            monitor.Log(new Point { Type = FailureType.TimedOut, TimeTaken = elapsed });
         }
 
         public CircuitBreaker<R> Cancellation(CancellationToken cancelToken) {
@@ -110,6 +128,11 @@ namespace Nizcita
 
         public CircuitBreaker<R> Alternate(Func<CancellationToken,Task<R>> alternateFn) {
             this.alternateFn = alternateFn;
+            return this;
+        }
+
+        public CircuitBreaker<R> ResultOk(Func<R,bool> check) {
+            this.isResultOk = check;
             return this;
         }
 
