@@ -9,6 +9,6 @@ namespace Nizcita {
         public TimeSpan TimeTaken { get; set; }
         public Exception Fault { get; set; }        
         public bool TimedOut { get; set; }
-        public FailureType Type { get; internal set; }
+        public FailureType FailureType { get; set; }
     }
 }

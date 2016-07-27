@@ -23,7 +23,7 @@ namespace Nizcita.Tests {
             CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object);
             int val = 10;
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return val; });
             }).Result;
@@ -46,7 +46,7 @@ namespace Nizcita.Tests {
             });
 
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     // deleberate divide by zero
@@ -56,7 +56,7 @@ namespace Nizcita.Tests {
             Assert.AreEqual<int>(alternate, x);
             Assert.IsNotNull(point);
             Assert.IsTrue(point.Fault is DivideByZeroException);
-            Assert.IsTrue(point.Type == FailureType.Fault);
+            Assert.IsTrue(point.FailureType == FailureType.Fault);
         }
 
         [TestMethod]
@@ -74,7 +74,7 @@ namespace Nizcita.Tests {
 
             c.Close();
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {                   
                     return val;
@@ -97,14 +97,14 @@ namespace Nizcita.Tests {
             CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
-            }).ResultOk((r) => {
+            }).CheckResult((r) => {
                 if (r == val) {
                     return false;
                 }
                 return true;
             });           
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     return val;
@@ -113,7 +113,7 @@ namespace Nizcita.Tests {
 
             Assert.AreEqual<int>(alternate, x);
             Assert.IsNotNull(point);
-            Assert.IsTrue(point.Type == FailureType.InvalidResult);
+            Assert.IsTrue(point.FailureType == FailureType.InvalidResult);
         }
 
 
@@ -128,14 +128,14 @@ namespace Nizcita.Tests {
             CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => { return alternate; });
-            }).ResultOk((r) => {
+            }).CheckResult((r) => {
                 if (r == val) {
                     return true;
                 }
                 return false;
             });
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     return val;
@@ -164,7 +164,7 @@ namespace Nizcita.Tests {
             });
 
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     // deleberate divide by zero
@@ -194,7 +194,7 @@ namespace Nizcita.Tests {
             }).WithinTime(new TimeSpan(0, 0, 0, 0, 10));
 
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     for(int i=0;i<10;i++) {
@@ -209,7 +209,41 @@ namespace Nizcita.Tests {
 
             Assert.AreEqual<int>(alternate, x);
             Assert.IsNotNull(point);
-            Assert.IsTrue(point.Type == FailureType.TimedOut);
+            Assert.IsTrue(point.FailureType == FailureType.TimedOut);
+            Assert.IsNotNull(point.TimeTaken);
+        }
+
+        [TestMethod]
+        public void OnTimeoutWithin0AlternateTest() {
+            int val = 10;
+            int alternate = 5;
+
+            Point point = null;
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>())).Callback<Point>((p) => { point = p; });
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).Alternate((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => { return alternate; });
+            }).WithinTime(new TimeSpan(0, 0, 0, 0, 0));
+
+
+            int x = c.InvokeAsync((token) => {
+                // just to test - wrap the return in a Task run, in real world we would use a async method
+                return Task.Run(() => {
+                    for (int i = 0; i < 10; i++) {
+                        if (token.IsCancellationRequested) {
+                            throw new TaskCanceledException();
+                        }
+                        Thread.Sleep(5);
+                    }
+                    return val;
+                });
+            }).Result;
+
+            Assert.AreEqual<int>(alternate, x);
+            Assert.IsNotNull(point);
+            Assert.IsTrue(point.FailureType == FailureType.TimedOut);
             Assert.IsNotNull(point.TimeTaken);
         }
 
@@ -231,7 +265,7 @@ namespace Nizcita.Tests {
             }).Cancellation(cts.Token);
 
 
-            int x = c.InvokeAysnc((token) => {
+            int x = c.InvokeAsync((token) => {
                 // just to test - wrap the return in a Task run, in real world we would use a async method
                 return Task.Run(() => {
                     for (int i = 0; i < 10; i++) {
@@ -245,6 +279,25 @@ namespace Nizcita.Tests {
             }).Result;
 
             Assert.AreEqual<int>(default(int),x);
+        }
+
+        [TestMethod]
+        public void OnAlarmCloseTest() {
+
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+
+            AlarmHandler ah = null;
+            monitorMock.Setup(m => m.Listen(It.IsAny<AlarmHandler>())).Callback<AlarmHandler> ((a) => {
+                ah = a;
+            });
+
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object);
+
+            ah(new Alarm());
+
+            Assert.IsFalse(c.IsOpen);
         }
     }
 }

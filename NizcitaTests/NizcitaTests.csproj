@@ -59,9 +59,15 @@
   </Choose>
   <ItemGroup>
     <Compile Include="CircuitBreakerTests.cs" />
+    <Compile Include="ConcurrentLimitedBufferTests.cs" />
+    <Compile Include="MonitorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LimitedBuffer\LimitedBuffer.csproj">
+      <Project>{a9ebb235-73fd-4ccc-8539-ae9d67f28086}</Project>
+      <Name>LimitedBuffer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Nizcita\Nizcita.csproj">
       <Project>{E4C598FB-5FDB-47A9-8FA9-6A9ABD6DC2F1}</Project>
       <Name>Nizcita</Name>
