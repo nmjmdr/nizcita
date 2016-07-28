@@ -8,8 +8,16 @@ using System.Threading.Tasks;
 
 namespace Nizcita
 {
+    public enum State {
+        Open,
+        Close
+    }
+    public delegate void CircuitStateChangedHandler(State state);
+
     public class CircuitBreaker<R>
-    {        
+    {
+        private const int DefaultProbeThreshold = 5;
+
         private CancellationTokenSource combinedCancelTokenSource;
         private CancellationToken calleeCancelToken;
         private CancellationToken timeCancelToken;        
@@ -19,6 +27,10 @@ namespace Nizcita
         private Func<R, bool> checkResult;
         private IMonitor monitor;
         private TimeSpan? withinTimespan;
+        private CircuitStateChangedHandler circuitStateChangedEvt;
+        private Func<int, bool> probeStrategy;
+        private volatile int closedCallCounter = 0;
+        private object lockObj = new object();
 
         public CircuitBreaker(int bufferSz,IEnumerable<Func<Point[],bool>> reducers) : this(new Monitor(new ConcurrentLimitedBuffer<Point>(bufferSz), reducers)) {
         }        
@@ -32,6 +44,17 @@ namespace Nizcita
         private void alarmHandler(Alarm alarm) {
             // close the gate here
             isOpen = false;
+            circuitStateChangedEvt?.Invoke(State.Close);
+        }
+
+        public CircuitBreaker<R> OnCircuitStateChanged(CircuitStateChangedHandler handler) {
+            this.circuitStateChangedEvt += handler;
+            return this;
+        }
+
+        public CircuitBreaker<R> ProbeStrategy(Func<int,bool> p) {
+            this.probeStrategy = p;
+            return this;
         }
 
         public async Task<R> InvokeAsync(Func<CancellationToken, Task<R>> f) {
@@ -40,17 +63,66 @@ namespace Nizcita
             // other wise there could be a delay between when the "WithinTimne" is invoked and when "InvokeAsync" is invoked
             setupTimeCancelToken();
 
-            R r = default(R);                       
+            R r = default(R);
 
             if (!isOpen) {
-                if (alternateFn != null) {
-                    r = await alternateFn(calleeCancelToken);
-                }
-                return r;
-            }
+                bool probe = shouldProbe(closedCallCounter);
 
-            r = await invokeAsyncInternal(f);
+                if (!probe) {
+                    closedCallCounter++;
+
+                    if (alternateFn != null) {
+                        r = await alternateFn(calleeCancelToken);
+                    }
+                    return r;
+                } else {
+                    lock (lockObj) {
+                        closedCallCounter = 0;
+                    }
+                    r = await attemptProbe(f);
+                }
+            } else {
+                r = await invokeAsyncInternal(f, (p) => {
+                    monitor.Log(p);
+                    if (p.FailureType == FailureType.Fault) {
+                        exceptionIntercept?.Invoke(p.Fault);
+                    }
+                });
+            }
             return r;
+        }
+
+        private async Task<R> attemptProbe(Func<CancellationToken, Task<R>> f) {
+            bool probeSuccessful = true;
+            R r = await invokeAsyncInternal(f, (p) => {
+                // it is a probe, do not log to monitor
+                // invoke exception handlers
+                if (p.FailureType == FailureType.Fault) {
+                    exceptionIntercept?.Invoke(p.Fault);
+                }
+                // we got a failure, probe failed
+                probeSuccessful = false;
+            });
+
+            if(probeSuccessful) {
+                // open the gate
+                isOpen = true;
+                circuitStateChangedEvt?.Invoke(State.Open);
+            }
+            return r;
+        }
+
+
+        private bool shouldProbe(int counter) {
+            if(probeStrategy != null) {
+                return probeStrategy(counter);
+            }
+            // apply the default proble strategy
+            return defaulProbeStrategy(counter);
+        }
+
+        private bool defaulProbeStrategy(int counter) {
+            return counter >= DefaultProbeThreshold;
         }
 
         public bool IsOpen {
@@ -63,7 +135,7 @@ namespace Nizcita
             isOpen = false;
         }
 
-        private async Task<R> invokeAsyncInternal(Func<CancellationToken, Task<R>> f) {
+        private async Task<R> invokeAsyncInternal(Func<CancellationToken, Task<R>> f,Action<Point> onInvokeFailed) {
 
             bool computeAlternate = false;
             R r = default(R);
@@ -84,24 +156,23 @@ namespace Nizcita
                     r = await f(combinedCancelTokenSource.Token);
                     watch.Stop();
 
-                    if (!checkResult(r)) {
+                    if (checkResult != null && !checkResult(r)) {
                         computeAlternate = true;
-                        logInvalidResult(watch.Elapsed, r);
+                        onInvokeFailed(new Point { FailureType = FailureType.InvalidResult, TimeTaken = watch.Elapsed });
                     }
 
                 } catch (OperationCanceledException) {
                     watch.Stop();
                     if (timeCancelToken.IsCancellationRequested) {
                         // log as Fault
-                        logTimedOut(watch.Elapsed);
                         computeAlternate = true;
+                        onInvokeFailed(new Point { FailureType = FailureType.TimedOut, TimeTaken = watch.Elapsed });                        
                     }
                     //else - cancellation was requested by the callee, return default value, do not log as fault                
                 } catch (Exception exp) {
                     watch.Stop();
-                    exceptionIntercept?.Invoke(exp);
-                    logFault(watch.Elapsed, exp);
                     computeAlternate = true;
+                    onInvokeFailed(new Point { FailureType = FailureType.Fault, TimeTaken = watch.Elapsed, Fault = exp });
                 }
             }
 
@@ -112,7 +183,15 @@ namespace Nizcita
             return r;
         }
 
-        private void logInvalidResult(TimeSpan elapsed, R r) {
+        private void invokeFailedHandler(Point point) {
+            
+        }
+
+        private void invokeFailedHandlerForProbe(Point point) {
+
+        }
+
+        private void logInvalidResult(TimeSpan elapsed) {
             monitor.Log(new Point { FailureType = FailureType.InvalidResult, TimeTaken = elapsed });
         }
 

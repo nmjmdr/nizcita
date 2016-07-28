@@ -299,5 +299,58 @@ namespace Nizcita.Tests {
 
             Assert.IsFalse(c.IsOpen);
         }
+
+
+        [TestMethod]
+        public void ProberAfterNAlternatesTest() {
+
+            Mock<IMonitor> monitorMock = new Mock<IMonitor>();
+
+            AlarmHandler ah = null;
+            monitorMock.Setup(m => m.Listen(It.IsAny<AlarmHandler>())).Callback<AlarmHandler>((a) => {
+                ah = a;
+            });
+
+            monitorMock.Setup(m => m.Log(It.IsAny<Point>()));
+
+            int thresholdAlternateCounter = 5;
+            int probeStrategyCounter = 0;
+
+            int val = 10;
+            int alternate = 5;
+
+            CircuitBreaker<int> c = new CircuitBreaker<int>(monitorMock.Object).ProbeStrategy((alternateCallCounter) => {
+                probeStrategyCounter++;
+                if (alternateCallCounter == thresholdAlternateCounter) {
+                    return true;
+                }
+                return false;
+            }).Alternate((token) => {
+                return Task.Run(() => {
+                    return alternate;
+                });
+             });
+            //First close the gate
+            ah(new Alarm());
+            Assert.IsFalse(c.IsOpen);
+
+            // now make calls until threhold and more
+            for (int i = 0; i <= thresholdAlternateCounter; i++) {
+                int x = c.InvokeAsync((token) => {
+                    // just to test - wrap the return in a Task run, in real world we would use a async method
+                    return Task.Run(() => {
+                        return val;
+                    });
+                }).Result;
+
+                if(i<thresholdAlternateCounter) {
+                    Assert.AreEqual<int>(alternate, x);
+                } else {
+                    Assert.AreEqual<int>(val, x);
+                }
+            }
+
+            Assert.IsTrue(probeStrategyCounter >= thresholdAlternateCounter);
+        }
     }
 }
