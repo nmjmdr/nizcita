@@ -49,6 +49,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LimitedBuffer\LimitedBuffer.csproj">
+      <Project>{a9ebb235-73fd-4ccc-8539-ae9d67f28086}</Project>
+      <Name>LimitedBuffer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Nizcita\Nizcita.csproj">
       <Project>{e4c598fb-5fdb-47a9-8fa9-6a9abd6dc2f1}</Project>
       <Name>Nizcita</Name>

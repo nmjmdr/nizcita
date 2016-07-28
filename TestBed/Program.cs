@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Nizcita;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,66 +11,41 @@ using System.Threading.Tasks;
 namespace TestBed {
     class Program {
 
-        private static Random r = new Random((int)DateTime.Now.Ticks);
-
+       
         static void Main(string[] args) {
 
-            DownloadAll();
+            int failureThreshold = 2;
+            List<Func<Point[], bool>> reducers = new List<Func<Point[], bool>>();
+            reducers.Add((points) => {
+                if(points.Count() > failureThreshold) {
+                    return true;
+                }
+                return false;
+            });
 
-            char key = ' ';
-            for(;key != 'q';) {
-                key = Console.ReadKey().KeyChar;
-            }            
+            CircuitBreaker<HttpResponseMessage> cb = new CircuitBreaker<HttpResponseMessage>(10, reducers).Alternate((token) => {
+
+                HttpClient client = new HttpClient();
+                return client.GetAsync("https://www.bing.com/news", HttpCompletionOption.ResponseContentRead);
+            }).CheckResult((r) => {
+                return r.IsSuccessStatusCode;
+            });
+
+            cb.InvokeAsync((token) => {
+                HttpClient client = new HttpClient();
+                return client.GetAsync("https://google.com/news", HttpCompletionOption.ResponseContentRead);
+            }).ContinueWith((t) => {
+                Console.WriteLine("Got news: {0}",t.Result.StatusCode);
+            });
+            
+            // do other work
+            for(; Console.ReadKey().KeyChar != 'q';) {                
+            }
+            
         }
 
         
 
-        public static bool DownloadAll() {
-
-            Task[] tasks = new Task[10];
-
-            for(int i=0;i<10;i++) {
-                tasks[i] = Download(i);
-            }
-
-            Task.WaitAll(tasks);
-
-            return true;
-        }
-
-
-
-        public static async Task<bool> Download(int i) {
-            Console.WriteLine("Will attemp to download {0}", i);
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-            bool ok;
-            ok = await get(i);
-            if (ok) {
-                ok = await copy(i);
-            }
-            watch.Stop();
-
-            Console.WriteLine("Downloaded {0}, time taken - {1}", i, watch.Elapsed.TotalMilliseconds);
-            return ok;
-        }
-
-        private static Task<bool> copy(int i) {
-            Console.WriteLine("Will copy: {0}", i);
-            return Task.Run(() => {
-                int s = r.Next(500, 2000);
-                Thread.Sleep(s);
-                return true;
-            });
-        }
-
-        private static Task<bool> get(int i) {
-            Console.WriteLine("Will get: {0}", i);
-            return Task.Run(() => {
-                int s = r.Next(1500, 5000);
-                Thread.Sleep(s);
-                return true;
-            });
-        }
+        
     }
 }

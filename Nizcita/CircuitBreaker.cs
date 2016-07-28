@@ -13,18 +13,19 @@ namespace Nizcita
         Close
     }
     public delegate void CircuitStateChangedHandler(State state);
+        
 
-    public class CircuitBreaker<R>
+    public class CircuitBreaker<T>
     {
         private const int DefaultProbeThreshold = 5;
 
         private CancellationTokenSource combinedCancelTokenSource;
         private CancellationToken calleeCancelToken;
         private CancellationToken timeCancelToken;        
-        private Func<CancellationToken, Task<R>> alternateFn;
+        private Func<CancellationToken, Task<T>> alternateFn;
         private Action<Exception> exceptionIntercept;
         private volatile bool isOpen = true;
-        private Func<R, bool> checkResult;
+        private Func<T, bool> checkResult;
         private IMonitor monitor;
         private TimeSpan? withinTimespan;
         private CircuitStateChangedHandler circuitStateChangedEvt;
@@ -47,23 +48,24 @@ namespace Nizcita
             circuitStateChangedEvt?.Invoke(State.Close);
         }
 
-        public CircuitBreaker<R> OnCircuitStateChanged(CircuitStateChangedHandler handler) {
+        public CircuitBreaker<T> OnCircuitStateChanged(CircuitStateChangedHandler handler) {
             this.circuitStateChangedEvt += handler;
             return this;
         }
 
-        public CircuitBreaker<R> ProbeStrategy(Func<int,bool> p) {
+        public CircuitBreaker<T> ProbeStrategy(Func<int,bool> p) {
             this.probeStrategy = p;
             return this;
         }
 
-        public async Task<R> InvokeAsync(Func<CancellationToken, Task<R>> f) {
+        public async Task<T> InvokeAsync(Func<CancellationToken, Task<T>> f) {
 
             // set time cancel token at this stage,
             // other wise there could be a delay between when the "WithinTimne" is invoked and when "InvokeAsync" is invoked
             setupTimeCancelToken();
 
-            R r = default(R);
+            T r = default(T);
+            
 
             if (!isOpen) {
                 bool probe = shouldProbe(closedCallCounter);
@@ -74,7 +76,7 @@ namespace Nizcita
                     if (alternateFn != null) {
                         r = await alternateFn(calleeCancelToken);
                     }
-                    return r;
+                    return r ;
                 } else {
                     lock (lockObj) {
                         closedCallCounter = 0;
@@ -82,6 +84,7 @@ namespace Nizcita
                     r = await attemptProbe(f);
                 }
             } else {
+
                 r = await invokeAsyncInternal(f, (p) => {
                     monitor.Log(p);
                     if (p.FailureType == FailureType.Fault) {
@@ -92,9 +95,9 @@ namespace Nizcita
             return r;
         }
 
-        private async Task<R> attemptProbe(Func<CancellationToken, Task<R>> f) {
+        private async Task<T> attemptProbe(Func<CancellationToken, Task<T>> f) {
             bool probeSuccessful = true;
-            R r = await invokeAsyncInternal(f, (p) => {
+            T r = await invokeAsyncInternal(f, (p) => {
                 // it is a probe, do not log to monitor
                 // invoke exception handlers
                 if (p.FailureType == FailureType.Fault) {
@@ -135,14 +138,14 @@ namespace Nizcita
             isOpen = false;
         }
 
-        private async Task<R> invokeAsyncInternal(Func<CancellationToken, Task<R>> f,Action<Point> onInvokeFailed) {
+        private async Task<T> invokeAsyncInternal(Func<CancellationToken, Task<T>> f,Action<Point> onInvokeFailed) {
 
             bool computeAlternate = false;
-            R r = default(R);
+            T r = default(T);
 
             // check if the callee has requested cancel already
             if(calleeCancelToken.IsCancellationRequested) {
-                return default(R);
+                return default(T);
             }
 
             // has the timeout already expired??
@@ -203,14 +206,14 @@ namespace Nizcita
             monitor.Log(new Point { FailureType = FailureType.TimedOut, TimeTaken = elapsed });
         }
 
-        public CircuitBreaker<R> Cancellation(CancellationToken cancelToken) {
+        public CircuitBreaker<T> Cancellation(CancellationToken cancelToken) {
             this.calleeCancelToken = cancelToken;
             this.combinedCancelTokenSource = combineTokens(this.calleeCancelToken);
             return this;
         }
         
         
-        public CircuitBreaker<R> WithinTime(TimeSpan timespan) {
+        public CircuitBreaker<T> WithinTime(TimeSpan timespan) {
 
             // Store the time stamp,
             withinTimespan = timespan;
@@ -228,17 +231,17 @@ namespace Nizcita
             this.combinedCancelTokenSource = combineTokens(this.timeCancelToken);            
         }
 
-        public CircuitBreaker<R> InterceptException(Action<Exception> interceptor) {
+        public CircuitBreaker<T> InterceptException(Action<Exception> interceptor) {
             this.exceptionIntercept = interceptor;
             return this;
         }
 
-        public CircuitBreaker<R> Alternate(Func<CancellationToken,Task<R>> alternateFn) {
+        public CircuitBreaker<T> Alternate(Func<CancellationToken,Task<T>> alternateFn) {
             this.alternateFn = alternateFn;
             return this;
         }
 
-        public CircuitBreaker<R> CheckResult(Func<R,bool> check) {
+        public CircuitBreaker<T> CheckResult(Func<T,bool> check) {
             this.checkResult = check;
             return this;
         }
