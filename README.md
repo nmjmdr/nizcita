@@ -3,7 +3,7 @@
 
 Nizcita is a circuit breaker library for asycn function invocations in C#. The term Nizcita literally means "decided,ascertained" in [Sanskrit][sn]
 
-> I have tried to make Nizcita "pluggable". Along with other features, the client can supply the function that determines, > >whether the circuit closes, can also supply a function to determine if a probe should be attempted (when the circuit is > closed).
+> I have tried to make Nizcita "pluggable". Along with other features, the client can supply the function that determines, whether the circuit closes, can also supply a function to determine if a probe should be attempted (when the circuit is closed).
 
 The examples below, try to illustrate this 'pluggable' aspect.
 
