@@ -34,7 +34,10 @@ namespace Nizcita
         private object lockObj = new object();
 
         public CircuitBreaker(int bufferSz,IEnumerable<Func<Point[],bool>> reducers) : this(new Monitor(new ConcurrentLimitedBuffer<Point>(bufferSz), reducers)) {
-        }        
+        }
+
+        public CircuitBreaker(int bufferSz, int reduceAfterNFailures, IEnumerable<Func<Point[], bool>> reducers) : this(new Monitor(new ConcurrentLimitedBuffer<Point>(bufferSz), reducers, reduceAfterNFailures)) {
+        }
 
         public CircuitBreaker(IMonitor monitor) {
             this.combinedCancelTokenSource = new CancellationTokenSource();
@@ -76,7 +79,7 @@ namespace Nizcita
                     if (alternateFn != null) {
                         r = await alternateFn(calleeCancelToken);
                     }
-                    return r ;
+                    return r;
                 } else {
                     lock (lockObj) {
                         closedCallCounter = 0;

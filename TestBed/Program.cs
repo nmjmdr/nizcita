@@ -17,7 +17,8 @@ namespace TestBed {
             int failureThreshold = 2;
             List<Func<Point[], bool>> reducers = new List<Func<Point[], bool>>();
             reducers.Add((points) => {
-                if(points.Count() > failureThreshold) {
+                
+                if (points.Count() > failureThreshold) {
                     return true;
                 }
                 return false;
@@ -29,7 +30,7 @@ namespace TestBed {
                 return client.GetAsync("https://www.bing.com/news", HttpCompletionOption.ResponseContentRead);
             }).CheckResult((r) => {
                 return r.IsSuccessStatusCode;
-            });
+            }).WithinTime(new TimeSpan(0, 0, 0, 0, 200));
 
             cb.InvokeAsync((token) => {
                 HttpClient client = new HttpClient();
