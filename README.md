@@ -135,6 +135,10 @@ A lot, the code has not been tested thoroughly. If you find any bugs or have sug
 
 Dashboard to view failures and circuit state.
 
+Support for Alerts
+
+For dashboard and alerts integrate with any opensource log dashboard system
+
 
 ----
 
