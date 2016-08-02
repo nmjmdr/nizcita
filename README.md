@@ -133,11 +133,13 @@ Circuit breaker keeps a count of the calls made during the closed state, and inv
 
 A lot, the code has not been tested thoroughly. If you find any bugs or have suggestions for improvements, please email me at: narasimha (dot) (gm) (at) gmail
 
+Log integration
+
 Dashboard to view failures and circuit state.
 
 Support for Alerts
 
-For dashboard and alerts integrate with any opensource log dashboard system
+For dashboard and alerts have to integrate have to any opensource log dashboard system (to be done)
 
 
 ----
